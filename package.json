@@ -2,6 +2,7 @@
   "name": "syncdirs3",
   "version": "1.0.0",
   "description": "Transfer files between local and s3 filesystems recursively",
+  "repository": "github:kociolekt/syncdirs3",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
