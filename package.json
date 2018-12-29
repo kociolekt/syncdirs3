@@ -1,0 +1,25 @@
+{
+  "name": "syncdirs3",
+  "version": "1.0.0",
+  "description": "Transfer files between local and s3 filesystems recursively",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "s3",
+    "fs",
+    "aws",
+    "sync",
+    "copy",
+    "transfer",
+    "upload",
+    "download",
+    "recursive"
+  ],
+  "author": "Tomasz Kociołek",
+  "license": "ISC",
+  "dependencies": {
+    "s3fs": "^2.5.0"
+  }
+}
