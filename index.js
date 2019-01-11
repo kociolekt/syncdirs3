@@ -33,7 +33,7 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fs, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fs, this.log, generateOptions.bind(generateOptions, obj));
+                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fs, this.log, generateOptions);
             }
         }, this.fs);
     }
@@ -51,7 +51,7 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fsS3, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fsS3, this.log, generateOptions.bind(generateOptions, obj));
+                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fsS3, this.log, generateOptions);
             }
         }, this.fs);
     }
@@ -69,13 +69,16 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fs, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fsS3, this.fs, this.log, generateOptions.bind(generateOptions, obj));
+                await SyncDirS3.copyFile(srcPath, destPath, this.fsS3, this.fs, this.log, generateOptions);
             }
         }, this.fsS3);
     }
 }
 
 SyncDirS3.createDirIfNotExist = (path, fs = fs, log = console.log) => {
+    // fix for aws s3 directories (it expects dir to have / at the end of path)
+    if(path.slice(-1) !== '/') path += '/';
+
     return new Promise((resolve, reject) => {
         fs.stat(path, (err, stat) => {
             if(err && err.code === 'ENOENT') {
@@ -87,6 +90,8 @@ SyncDirS3.createDirIfNotExist = (path, fs = fs, log = console.log) => {
                         resolve();
                     }
                 });
+            } else if(err) {
+                reject('createDirIfNotExist('+path+', ...) errored with ' + err.code + ' code');
             } else if(!err) {
                 if(stat.isDirectory()) {
                     log('Directory ' + path + ' already exists (OK)');
@@ -135,7 +140,7 @@ SyncDirS3.walk = (path, callback = () => {}, fs = fs) => {
                     isDirectory: true,
                     stat: stat
                 });
-    
+
                 fs.readdir(path, async (err, list) => {
                     let walks = list.map((file) => {
                         return SyncDirS3.walk(path + '/' + file, callback, fs);
