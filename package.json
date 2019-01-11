@@ -1,6 +1,6 @@
 {
   "name": "@kociolekt/syncdirs3",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Transfer files between local and s3 filesystems recursively",
   "repository": "github:kociolekt/syncdirs3",
   "main": "index.js",
