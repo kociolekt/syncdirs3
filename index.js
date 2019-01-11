@@ -25,7 +25,7 @@ class SyncDirS3 {
      * @param {String} src 
      * @param {String} dest 
      */
-    async copy(src, dest) {
+    async copy(src, dest, generateOptions = () => {}) {
         await SyncDirS3.walk(src, async (obj) => {
             let srcPath = obj.path;
             let destPath = dest + obj.path.substr(src.length);
@@ -33,7 +33,7 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fs, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fs, this.log);
+                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fs, this.log, generateOptions.bind(generateOptions, obj));
             }
         }, this.fs);
     }
@@ -43,7 +43,7 @@ class SyncDirS3 {
      * @param {String} src Local path
      * @param {String} dest Bucket path
      */
-    async upload(src, dest) {
+    async upload(src, dest, generateOptions = () => {}) {
         await SyncDirS3.walk(src, async (obj) => {
             let srcPath = obj.path;
             let destPath = dest + obj.path.substr(src.length);
@@ -51,7 +51,7 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fsS3, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fsS3, this.log);
+                await SyncDirS3.copyFile(srcPath, destPath, this.fs, this.fsS3, this.log, generateOptions.bind(generateOptions, obj));
             }
         }, this.fs);
     }
@@ -61,7 +61,7 @@ class SyncDirS3 {
      * @param {String} src Bucket path
      * @param {String} dest Local path
      */
-    async download(src, dest) {
+    async download(src, dest, generateOptions = () => {}) {
         await SyncDirS3.walk(src, async (obj) => {
             let srcPath = obj.path;
             let destPath = dest + obj.path.substr(src.length);
@@ -69,7 +69,7 @@ class SyncDirS3 {
             if(obj.isDirectory) {
                 await SyncDirS3.createDirIfNotExist(destPath, this.fs, this.log);
             } else {
-                await SyncDirS3.copyFile(srcPath, destPath, this.fsS3, this.fs, this.log);
+                await SyncDirS3.copyFile(srcPath, destPath, this.fsS3, this.fs, this.log, generateOptions.bind(generateOptions, obj));
             }
         }, this.fsS3);
     }
@@ -99,7 +99,7 @@ SyncDirS3.createDirIfNotExist = (path, fs = fs, log = console.log) => {
     });
 };
 
-SyncDirS3.copyFile = (srcPath, destPath, srcFs = fs, destFs = fs, log = console.log) => {
+SyncDirS3.copyFile = (srcPath, destPath, srcFs = fs, destFs = fs, log = console.log, generateOptions = () => {}) => {
     return new Promise((resolve, reject) => {
         let done = (err) => {
             if (!cbCalled) {
@@ -116,7 +116,7 @@ SyncDirS3.copyFile = (srcPath, destPath, srcFs = fs, destFs = fs, log = console.
         
         let cbCalled = false;
         let rd = srcFs.createReadStream(srcPath);
-        let wr = destFs.createWriteStream(destPath);
+        let wr = destFs.createWriteStream(destPath, generateOptions(srcPath));
 
         rd.on('error', done);
         wr.on('error', done);
@@ -132,7 +132,8 @@ SyncDirS3.walk = (path, callback = () => {}, fs = fs) => {
                 // process directory
                 await callback({
                     path: path,
-                    isDirectory: true
+                    isDirectory: true,
+                    stat: stat
                 });
     
                 fs.readdir(path, async (err, list) => {
@@ -148,7 +149,8 @@ SyncDirS3.walk = (path, callback = () => {}, fs = fs) => {
                 // process file
                 await callback({
                     path: path,
-                    isDirectory: false
+                    isDirectory: false,
+                    stat: stat
                 });
                 
                 resolve();
